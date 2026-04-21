@@ -127,10 +127,10 @@ FeaturesFromRenderableItems AS (
     (
       SELECT string_agg(content_service, '|')
       FROM (
-        SELECT DISTINCT json_extract_string(customFields, '$.' || key.unnest || '.contentService') as content_service
-        FROM unnest(json_keys(customFields)) as key
-        WHERE json_extract_string(customFields, '$.' || key.unnest || '.contentService') IS NOT NULL
-          AND json_extract_string(customFields, '$.' || key.unnest || '.contentService') != ''
+        SELECT DISTINCT json_extract_string(customFields, '$.' || k || '.contentService') as content_service
+        FROM unnest(json_keys(customFields)) as t(k)
+        WHERE json_extract_string(customFields, '$.' || k || '.contentService') IS NOT NULL
+          AND json_extract_string(customFields, '$.' || k || '.contentService') != ''
       )
     ) as contentService
     FROM ExpandedRenderableItems
@@ -167,10 +167,10 @@ FeaturesFromChains AS (
     (
       SELECT string_agg(content_service, '|')
       FROM (
-        SELECT DISTINCT json_extract_string(feature.customFields, '$.' || key.unnest || '.contentService') as content_service
-        FROM unnest(json_keys(feature.customFields)) as key
-        WHERE json_extract_string(feature.customFields, '$.' || key.unnest || '.contentService') IS NOT NULL
-          AND json_extract_string(feature.customFields, '$.' || key.unnest || '.contentService') != ''
+        SELECT DISTINCT json_extract_string(feature.customFields, '$.' || k || '.contentService') as content_service
+        FROM unnest(json_keys(feature.customFields)) as t(k)
+        WHERE json_extract_string(feature.customFields, '$.' || k || '.contentService') IS NOT NULL
+          AND json_extract_string(feature.customFields, '$.' || k || '.contentService') != ''
       )
     ) as contentService
   FROM UnnestedFeaturesFromChains
