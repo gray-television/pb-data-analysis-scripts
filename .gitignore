@@ -6,5 +6,9 @@ _debug.sh
 _debug.sql
 _debug.csv
 _tmpview.db
+_tmpview.db.wal
+_tmpview.db.tmp
+node_modules/
 test*
 *.csv
+output/

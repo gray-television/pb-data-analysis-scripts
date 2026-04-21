@@ -1,139 +1,197 @@
-Example code is provided by a community of developers. They are intended to help you get started more quickly, but are not guaranteed to cover all scenarios nor are they supported by Arc XP.
+# PB-Data Analysis Scripts (Node.js)
 
-> These examples are licensed under the [MIT license](https://mit-license.org/): THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Analyze Arc XP PageBuilder data (pb-data) locally using Node.js and DuckDB. No external CLI tools required — just `npm install` and go.
 
-Reiterated from license above, all code in this example is free to use, and as such, there is NO WARRANTY, SLA or SUPPORT for these examples.
+> This is a Node.js port of the [original shell scripts](https://github.com/arcxp/pb-data-analysis-scripts). The originals are preserved in `shell-scripts/` for reference. See [CONVERSION_RECORD.md](CONVERSION_RECORD.md) for the full mapping.
 
-----
+> **License:** [MIT](LICENSE) — NO WARRANTY, SLA, or SUPPORT.
 
-
-## Scripts to analyze pb-data locally
-
-Notes:
-- pb-data is a database snapshot of PageBuilder data, taken every 12 hours.
-
+---
 
 ## Requirements
 
-- Mongodb Tools: https://www.mongodb.com/docs/database-tools/installation/installation-macos/
-- Duckdb CLI https://duckdb.org/docs/api/cli/overview.html#installation
+- Node.js 18+
 
+## Setup
 
-## How to use
+1. Clone this repo
+2. Download pb-data from **Arc XP Admin > PageBuilder > Developer Tools > PB Data**
+3. Untar the download, rename the folder to `pb-data`, and place it in the project root
+4. Install and build views:
 
-1. Make sure you install the dependencies that `bsondump` and `duckdb` commands are present in your current bash session.
-2. First, download the pb-data from Arc XP Admin > PageBuilder > Developer Tools > PB Data screen, to your local computer.
-3. Unzip the downloaded tar file, and rename the folder as `pb-data` and place it in this projects root folder.
-4. Run `sh _prepare.sh` command to create temp database file (duckdb file) that contains the simplified views that is used in different shell scripts. These views are not copying the actual data, they are just views referring to the actual JSON files converted from mongodb bson files.
-5. Run any of the shell script. These scripts are plain and simple, you can read the code to understand what the parameters, or add `-h` argument to the scripts to see help text for each one of them (i.e: `sh find-pages-by-feature-name.sh -h`)
+```bash
+npm install
+npm run setup
+```
+
+`npm run setup` converts `.bson` files to `.jsonl` and creates a local DuckDB database (`_tmpview.db`) with the SQL views all scripts query against.
+
+> Run `npm run setup` again whenever you download fresh pb-data.
+
+---
+
+## Usage
+
+All commands can be run via `npm run <script>`. Pass flags after `--`.
+
+```bash
+npm run <script>
+npm run <script> -- -c              # CSV output (auto-saved to output/)
+npm run <script> -- -j              # JSON output (auto-saved to output/)
+```
+
+Or call the CLI directly:
+
+```bash
+node src/index.js <command> [options]
+node src/index.js --help
+```
+
+---
+
+## Scripts
+
+### Feature Analysis
+
+| Script | Description |
+|---|---|
+| `npm run all-features` | List all features in published pages/templates with usage counts |
+| `npm run find-feature -- -n <name>` | List pages/templates using a specific feature (exact match) |
+
+```bash
+npm run all-features
+npm run all-features -- -c
+npm run find-feature -- -n "global/Footer" -j
+```
+
+### Chain Analysis
+
+| Script | Description |
+|---|---|
+| `npm run all-chains` | List all chains in published pages/templates with usage counts |
+| `npm run find-chain -- -n <name>` | List pages/templates using a specific chain |
+
+```bash
+npm run all-chains
+npm run find-chain -- -n "DefaultChain"
+```
+
+### Content Source Analysis
+
+| Script | Description |
+|---|---|
+| `npm run all-content-sources` | Content sources from feature configurations |
+| `npm run all-resolvers-sources` | Content sources from route resolver configurations |
+| `npm run find-content-source -- -n <name>` | Features using a content source (fuzzy/LIKE match) |
+| `npm run find-resolver -- -n <name>` | Resolvers using a content source (exact match) |
+
+```bash
+npm run all-content-sources
+npm run find-content-source -- -n "content-api"
+npm run find-resolver -- -n "content-api"
+```
+
+### Page / URL Analysis
+
+| Script | Description |
+|---|---|
+| `npm run all-pages` | List all published pages with URIs (excludes templates) |
+| `npm run find-page -- -u <uri>` | List pages with URI containing the filter |
+
+```bash
+npm run all-pages
+npm run find-page -- -u "/events/"
+```
+
+### Describe a Page or Template
+
+| Script | Description |
+|---|---|
+| `npm run describe -- -i <id>` | Show metadata, chains, features, and content sources for a page/template |
+
+```bash
+npm run describe -- -i p9NRAEBz90bytDMt
+```
+
+Open a page in PageBuilder Editor using the ID from the output:
+```
+https://YOURORG.arcpublishing.com/pagebuilder/editor/curate?p=PAGEID
+```
+
+### Data Export Views
+
+| Script | Description |
+|---|---|
+| `npm run view-pages` | Dump `view_page_and_template` |
+| `npm run view-rendering` | Dump `view_rendering` |
+| `npm run view-resolvers` | Dump `view_resolver` |
+
+```bash
+npm run view-pages -- -c
+```
+
+### DuckDB GUI
+
+| Script | Description |
+|---|---|
+| `npm run gui` | Open DuckDB GUI in the browser (requires DuckDB CLI v1.1+) |
+
+---
+
+## CSV & JSON Output
+
+All commands accept `-c` for CSV or `-j` for JSON output. Files are automatically saved to the `output/` directory with a generated filename:
+
+```
+{command}_{param}_{YYYYMMDDTHHMMSS}.{csv|json}
+```
+
+Examples:
+
+```bash
+npm run all-features -- -c          # → output/all-features_20260421T165813.csv
+npm run find-feature -- -n "Article/Body" -j  # → output/find-feature_Article_Body_20260421T165820.json
+npm run describe -- -i p123456 -c   # → output/describe_meta_p123456_20260421T165830.csv
+                                    #   output/describe_chains_p123456_20260421T165830.csv
+                                    #   output/describe_features_p123456_20260421T165830.csv
+                                    #   output/describe_contentSources_p123456_20260421T165830.csv
+```
+
+The `describe` command in CSV mode saves one file per section. In JSON mode it saves a single file with all sections combined.
+
+---
+
+## All npm Scripts Reference
+
+| Script | Command | Flags |
+|---|---|---|
+| `npm run setup` | Convert bson + create DuckDB views | — |
+| `npm run all-features` | All features with usage counts | `-c` `-j` |
+| `npm run all-chains` | All chains with usage counts | `-c` `-j` |
+| `npm run all-pages` | All published page URIs | `-c` `-j` |
+| `npm run all-content-sources` | Content sources from features | `-c` `-j` |
+| `npm run all-resolvers-sources` | Content sources from resolvers | `-c` `-j` |
+| `npm run find-feature` | Pages using a feature | `-n <name> [-c] [-j]` |
+| `npm run find-chain` | Pages using a chain | `-n <name> [-c] [-j]` |
+| `npm run find-page` | Pages matching URI | `-u <uri> [-c] [-j]` |
+| `npm run find-content-source` | Features using a content source | `-n <name> [-c] [-j]` |
+| `npm run find-resolver` | Resolvers using a content source | `-n <name> [-c] [-j]` |
+| `npm run describe` | Describe a page or template | `-i <id> [-c] [-j]` |
+| `npm run view-pages` | Dump view_page_and_template | `-c` `-j` |
+| `npm run view-rendering` | Dump view_rendering | `-c` `-j` |
+| `npm run view-resolvers` | Dump view_resolver | `-c` `-j` |
+| `npm run gui` | Open DuckDB GUI in browser | — |
+
+---
 
 ## Video Tutorial
 
 [![Video Tutorial](https://img.youtube.com/vi/Sy3FjQv73VM/0.jpg)](https://www.youtube.com/watch?v=Sy3FjQv73VM)
 
-The video and tutorial can be found in "[How to check feature/content-source usage using pb-data analysis scripts](https://docs.arcxp.com/alc/en/how-to-check-feature-content-source-usage-using-pb-data-analysis-scripts?id=kb_article_view&sys_kb_id=b5ee6257c3f2ca50a046930a05013129#mcetoc_1i0qpofi99f)" ALC documentation.
+Based on the original shell scripts — the concepts and workflow are the same.
 
+---
 
-## Scripts
+## Updates
 
-In terminal, view the below script help with command `sh help.sh`
-
-### 📄 `describe-page-or-template.sh -i <page_or_template_id>`
-This script shows meta data of this page (uri, title), list of chains & features, sorted by how many times used in the page/template, and the content sources configured from features.
-
-`-i` Page or Template ID (required, min 2 characters)
-
-### 📁 `all-chains-usage.sh [-c]`
-Produces list of all chains used in your pb-data (not bundle), in published pages and templates along with how many pages they are used in and the number of times (instances) they are used in these pages.
-
-`-c` Output in CSV format
-
-### 🔍 `find-pages-by-chain-name.sh -n <chain_name> [-c]`
-Produces list of pages and templates which uses a specific chain.
-You can open pagebuilder editor with the following url template with the page or template id in the query string: `https://YOURORG.arcpublishing.com/pagebuilder/editor/curate?p=PAGEID`
-
-`-n` Chain name (required, min 2 characters)
-
-`-c` Output in CSV format
-
-### 📁 `all-features-usage.sh [-c]`
-Produces list of all features used in your pb-data (not bundle), in published pages and templates along with how many pages they are used in and the number of times (instances) they are used in these pages.
-
-`-c` Output in CSV format
-
-### 🔍 `find-pages-by-feature-name.sh -n <feature_name> [-c]`
-Produces list of pages and templates which uses a specific feature.
-You can open pagebuilder editor with the following url template with the page or template id in the query string: `https://YOURORG.arcpublishing.com/pagebuilder/editor/curate?p=PAGEID`
-
-`-n` Feature name (required, min 2 characters)
-
-`-c` Output in CSV format
-
-### 📁 `all-content-sources-usage.sh`
-List of all content sources, from feature block configurations.
-
-`-c` Output in CSV format
-
-### 🔍 `find-features-by-content-source.sh -n <content_source> [-c]`
-Produces list of features which uses a specific content source name (like match)
-
-`-n` Content source filter (required, min 2 characters)
-
-`-c` Output in CSV format
-
-### 📁 `all-content-sources-resolvers.sh [-c]`
-List of all content sources, from route resolver configurations.
-
-`-c` Output in CSV format
-
-### 🔍 `find-resolvers-by-content-source.sh -n <content_source> [-c]`
-Produces list of resolvers which uses a specific content source name (exact match)
-
-`-n` Content source name (required, min 2 characters)
-
-`-c` Output in CSV format
-
-### 📁 `all-page-urls.sh [-c]`
-Excludes templates, as they are powered by dynamic URL patterns from resolvers and are not included in this script's output.
-
-`-c` Output in CSV format
-
-### 🔍 `find-pages-by-uri.sh -u <uri_filter> [-c]`
-List all pages matching URI containing the provided filter.
-
-`-u` URI filter (required, min 2 characters)
-
-`-c` Output in CSV format
-
-### 📦 `view-page-and-template.sh [-c]`
-Select all from view_page_and_template
-
-`-c` Output in CSV format
-
-### 📦 `view-rendering.sh [-c]`
-Select all from view_rendering
-
-`-c` Output in CSV format
-
-### 📦 `view-resolver.sh [-c]`
-Select all from view_resolver
-
-`-c` Output in CSV format
-
-
-# Updates
-
-- **Aug 29, 2024:** A fix has been published that addresses an issue where some features (at the top level of the curation layout) not being included in the `all-features-usage.sh` script. To update, please pull code from master branch to your local working copy, then run `sh _prepare.sh` to re-create your local views.
-- **Oct 2, 2025:** New scripts and bugfixes from our friends at The Globe and Mail team ([PR#2](https://github.com/arcxp/pb-data-analysis-scripts/pull/2)).
-  - New help.sh (lists available scripts with short descriptions) and gui.sh to open duck db GUI in the browser to explore the data set.
-  - New `all-chains-usage.sh` and `find-pages-by-chain-name.sh` scripts to analyze chains usage.
-  - Fix content source usage script.
-- **Oct 14, 2025:** Another amazing update from our friends at The Globe and Mail team, introducing new scripts and improvements ([PR#3](https://github.com/arcxp/pb-data-analysis-scripts/pull/3)):
-  - **New analysis scripts**: Added 5 new scripts for content source analysis (`find-features-by-content-source.sh`, `find-resolvers-by-content-source.sh`) and debugging views (`view-page-or-template.sh`, `view-rendering.sh`, `view-resolver.sh`), all with CSV export support.
-  - **Performance improvements**: Major optimization reduced rendering items (95%+ reduction) by filtering to published versions only and latest renderings, greatly improving query execution speed.
-  - **Enhanced usability**: Updated scripts now include better ordering, feature/chain fingerprint columns for easier PB Editor identification, and improved content source detection from customFields with support for multi-service configurations.
-
-
-# License
-- [MIT License](LICENSE)
-- NO WARRANTY, SLA or SUPPORT
+See [CONVERSION_RECORD.md](CONVERSION_RECORD.md) for how to sync upstream changes from the original shell scripts repo.
