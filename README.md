@@ -40,10 +40,18 @@ npm run <script> -- -c              # CSV output (auto-saved to output/)
 npm run <script> -- -j              # JSON output (auto-saved to output/)
 ```
 
+`npm run` requires `--` before dash-prefixed flags. To avoid this, use `key=value` syntax instead:
+
+```bash
+npm run <script>
+npm run <script> csv                # CSV output (auto-saved to output/)
+npm run <script> json               # JSON output (auto-saved to output/)
+```
+
 Or call the CLI directly:
 
 ```bash
-node src/index.js <command> [options]
+node src/index.js <command> [key=value ...]
 node src/index.js --help
 ```
 
@@ -56,12 +64,12 @@ node src/index.js --help
 | Script | Description |
 |---|---|
 | `npm run all-features` | List all features in published pages/templates with usage counts |
-| `npm run find-feature -- -n <name>` | List pages/templates using a specific feature (exact match) |
+| `npm run find-feature n=<name>` | List pages/templates using a specific feature (exact match) |
 
 ```bash
 npm run all-features
-npm run all-features -- -c
-npm run find-feature -- -n "global/Footer" -j
+npm run all-features csv
+npm run find-feature n="global/Footer" json
 ```
 
 ### Chain Analysis
@@ -69,11 +77,11 @@ npm run find-feature -- -n "global/Footer" -j
 | Script | Description |
 |---|---|
 | `npm run all-chains` | List all chains in published pages/templates with usage counts |
-| `npm run find-chain -- -n <name>` | List pages/templates using a specific chain |
+| `npm run find-chain n=<name>` | List pages/templates using a specific chain |
 
 ```bash
 npm run all-chains
-npm run find-chain -- -n "DefaultChain"
+npm run find-chain n=DefaultChain
 ```
 
 ### Content Source Analysis
@@ -82,13 +90,13 @@ npm run find-chain -- -n "DefaultChain"
 |---|---|
 | `npm run all-content-sources` | Content sources from feature configurations |
 | `npm run all-resolvers-sources` | Content sources from route resolver configurations |
-| `npm run find-content-source -- -n <name>` | Features using a content source (fuzzy/LIKE match) |
-| `npm run find-resolver -- -n <name>` | Resolvers using a content source (exact match) |
+| `npm run find-content-source n=<name>` | Features using a content source (fuzzy/LIKE match) |
+| `npm run find-resolver n=<name>` | Resolvers using a content source (exact match) |
 
 ```bash
 npm run all-content-sources
-npm run find-content-source -- -n "content-api"
-npm run find-resolver -- -n "content-api"
+npm run find-content-source n=content-api
+npm run find-resolver n=content-api
 ```
 
 ### Page / URL Analysis
@@ -96,21 +104,21 @@ npm run find-resolver -- -n "content-api"
 | Script | Description |
 |---|---|
 | `npm run all-pages` | List all published pages with URIs (excludes templates) |
-| `npm run find-page -- -u <uri>` | List pages with URI containing the filter |
+| `npm run find-page u=<uri>` | List pages with URI containing the filter |
 
 ```bash
 npm run all-pages
-npm run find-page -- -u "/events/"
+npm run find-page u=/events/
 ```
 
 ### Describe a Page or Template
 
 | Script | Description |
 |---|---|
-| `npm run describe -- -i <id>` | Show metadata, chains, features, and content sources for a page/template |
+| `npm run describe i=<id>` | Show metadata, chains, features, and content sources for a page/template |
 
 ```bash
-npm run describe -- -i p9NRAEBz90bytDMt
+npm run describe i=p9NRAEBz90bytDMt
 ```
 
 Open a page in PageBuilder Editor using the ID from the output:
@@ -127,7 +135,7 @@ https://YOURORG.arcpublishing.com/pagebuilder/editor/curate?p=PAGEID
 | `npm run view-resolvers` | Dump `view_resolver` |
 
 ```bash
-npm run view-pages -- -c
+npm run view-pages csv
 ```
 
 ### DuckDB GUI
@@ -140,7 +148,7 @@ npm run view-pages -- -c
 
 ## CSV & JSON Output
 
-All commands accept `-c` for CSV or `-j` for JSON output. Files are automatically saved to the `output/` directory with a generated filename:
+All commands accept `csv` or `json` as an output flag. Files are automatically saved to the `output/` directory with a generated filename:
 
 ```
 {command}_{param}_{YYYYMMDDTHHMMSS}.{csv|json}
@@ -149,12 +157,12 @@ All commands accept `-c` for CSV or `-j` for JSON output. Files are automaticall
 Examples:
 
 ```bash
-npm run all-features -- -c          # → output/all-features_20260421T165813.csv
-npm run find-feature -- -n "Article/Body" -j  # → output/find-feature_Article_Body_20260421T165820.json
-npm run describe -- -i p123456 -c   # → output/describe_meta_p123456_20260421T165830.csv
-                                    #   output/describe_chains_p123456_20260421T165830.csv
-                                    #   output/describe_features_p123456_20260421T165830.csv
-                                    #   output/describe_contentSources_p123456_20260421T165830.csv
+npm run all-features csv          # → output/all-features_20260421T165813.csv
+npm run find-feature n=Article/Body json  # → output/find-feature_Article_Body_20260421T165820.json
+npm run describe i=p123456 csv   # → output/describe_meta_p123456_20260421T165830.csv
+                                  #   output/describe_chains_p123456_20260421T165830.csv
+                                  #   output/describe_features_p123456_20260421T165830.csv
+                                  #   output/describe_contentSources_p123456_20260421T165830.csv
 ```
 
 The `describe` command in CSV mode saves one file per section. In JSON mode it saves a single file with all sections combined.
@@ -166,20 +174,20 @@ The `describe` command in CSV mode saves one file per section. In JSON mode it s
 | Script | Command | Flags |
 |---|---|---|
 | `npm run setup` | Convert bson + create DuckDB views | — |
-| `npm run all-features` | All features with usage counts | `-c` `-j` |
-| `npm run all-chains` | All chains with usage counts | `-c` `-j` |
-| `npm run all-pages` | All published page URIs | `-c` `-j` |
-| `npm run all-content-sources` | Content sources from features | `-c` `-j` |
-| `npm run all-resolvers-sources` | Content sources from resolvers | `-c` `-j` |
-| `npm run find-feature` | Pages using a feature | `-n <name> [-c] [-j]` |
-| `npm run find-chain` | Pages using a chain | `-n <name> [-c] [-j]` |
-| `npm run find-page` | Pages matching URI | `-u <uri> [-c] [-j]` |
-| `npm run find-content-source` | Features using a content source | `-n <name> [-c] [-j]` |
-| `npm run find-resolver` | Resolvers using a content source | `-n <name> [-c] [-j]` |
-| `npm run describe` | Describe a page or template | `-i <id> [-c] [-j]` |
-| `npm run view-pages` | Dump view_page_and_template | `-c` `-j` |
-| `npm run view-rendering` | Dump view_rendering | `-c` `-j` |
-| `npm run view-resolvers` | Dump view_resolver | `-c` `-j` |
+| `npm run all-features` | All features with usage counts | `csv` `json` |
+| `npm run all-chains` | All chains with usage counts | `csv` `json` |
+| `npm run all-pages` | All published page URIs | `csv` `json` |
+| `npm run all-content-sources` | Content sources from features | `csv` `json` |
+| `npm run all-resolvers-sources` | Content sources from resolvers | `csv` `json` |
+| `npm run find-feature` | Pages using a feature | `n=<name> [csv] [json]` |
+| `npm run find-chain` | Pages using a chain | `n=<name> [csv] [json]` |
+| `npm run find-page` | Pages matching URI | `u=<uri> [csv] [json]` |
+| `npm run find-content-source` | Features using a content source | `n=<name> [csv] [json]` |
+| `npm run find-resolver` | Resolvers using a content source | `n=<name> [csv] [json]` |
+| `npm run describe` | Describe a page or template | `i=<id> [csv] [json]` |
+| `npm run view-pages` | Dump view_page_and_template | `csv` `json` |
+| `npm run view-rendering` | Dump view_rendering | `csv` `json` |
+| `npm run view-resolvers` | Dump view_resolver | `csv` `json` |
 | `npm run gui` | Open DuckDB GUI in browser | — |
 
 ---

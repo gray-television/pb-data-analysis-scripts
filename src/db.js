@@ -1,9 +1,8 @@
 import duckdb from "duckdb";
 import path from "path";
-import { fileURLToPath } from "url";
+import { config } from "./cli.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.resolve("_tmpview.db");
+const DB_PATH = path.resolve(config.dbPath);
 
 let db = null;
 let conn = null;

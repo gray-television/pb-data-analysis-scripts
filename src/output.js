@@ -1,8 +1,9 @@
 import chalk from "chalk";
 import fs from "fs";
 import path from "path";
+import { config } from "./cli.js";
 
-const OUTPUT_DIR = path.resolve("output");
+const OUTPUT_DIR = path.resolve(config.outputDir);
 
 function normalize(rows) {
   return rows.map((r) => Object.fromEntries(
@@ -69,31 +70,32 @@ function normalizeDeep(obj) {
 }
 
 export function output(rows, opts, header) {
+  printHeader(header);
+  printTable(rows);
   if (opts.json) {
     ensureOutputDir();
     const file = path.join(OUTPUT_DIR, buildFilename(opts._command, opts._param, ".json"));
     fs.writeFileSync(file, JSON.stringify(normalize(rows), null, 2) + "\n");
-    console.log(`Saved ${file}`);
-    return;
+    console.log(`\nSaved ${file}`);
   }
   if (opts.csv) {
     ensureOutputDir();
     const file = path.join(OUTPUT_DIR, buildFilename(opts._command, opts._param, ".csv"));
     writeCsv(normalize(rows), file);
-    console.log(`Saved ${file}`);
-    return;
+    console.log(`\nSaved ${file}`);
   }
-  printHeader(header);
-  printTable(rows);
 }
 
 export function outputDescribe(data, opts) {
+  for (const [key, rows] of Object.entries(data)) {
+    printHeader(key);
+    printTable(rows);
+  }
   if (opts.json) {
     ensureOutputDir();
     const file = path.join(OUTPUT_DIR, buildFilename(opts._command, opts._param, ".json"));
     fs.writeFileSync(file, JSON.stringify(normalizeDeep(data), null, 2) + "\n");
-    console.log(`Saved ${file}`);
-    return;
+    console.log(`\nSaved ${file}`);
   }
   if (opts.csv) {
     ensureOutputDir();
@@ -102,10 +104,5 @@ export function outputDescribe(data, opts) {
       writeCsv(normalize(rows), file);
       console.log(`Saved ${file}`);
     }
-    return;
-  }
-  for (const [key, rows] of Object.entries(data)) {
-    printHeader(key);
-    printTable(rows);
   }
 }

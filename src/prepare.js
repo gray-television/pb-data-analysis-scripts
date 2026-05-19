@@ -4,10 +4,11 @@ import { BSON } from "bson";
 import chalk from "chalk";
 import duckdb from "duckdb";
 import { fileURLToPath } from "url";
+import { config } from "./cli.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PB_DATA_DIR = path.resolve("pb-data");
-const DB_PATH = path.resolve("_tmpview.db");
+const PB_DATA_DIR = path.resolve(config.pbDataDir);
+const DB_PATH = path.resolve(config.dbPath);
 const VIEWS_SQL = path.resolve(__dirname, "views.sql");
 
 function convertBsonToJsonl(bsonPath, jsonlPath) {
@@ -38,7 +39,18 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(chalk.yellow("\n--- Convert bson files to jsonl files ---\n"));
+  console.log(chalk.yellow("\n--- Cleaning previous data ---\n"));
+  const oldJsonl = fs.readdirSync(PB_DATA_DIR).filter((f) => f.endsWith(".json") && !f.endsWith(".metadata.json"));
+  for (const file of oldJsonl) {
+    fs.unlinkSync(path.join(PB_DATA_DIR, file));
+  }
+  if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
+  for (const ext of [".wal", ".tmp"]) {
+    const lockFile = DB_PATH + ext;
+    if (fs.existsSync(lockFile)) fs.unlinkSync(lockFile);
+  }
+
+  console.log(chalk.yellow("--- Convert bson files to jsonl files ---\n"));
   const bsonFiles = fs.readdirSync(PB_DATA_DIR).filter((f) => f.endsWith(".bson"));
   for (const file of bsonFiles) {
     const base = path.basename(file, ".bson");
@@ -49,8 +61,7 @@ async function main() {
     console.log(`  ${base}: ${count} objects`);
   }
 
-  console.log(chalk.yellow("\n--- Create DuckDB database with views ---\n"));
-  if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
+  console.log(chalk.yellow("--- Create DuckDB database with views ---\n"));
   const viewsSql = fs.readFileSync(VIEWS_SQL, "utf-8");
 
   await new Promise((resolve, reject) => {
