@@ -1,0 +1,16 @@
+import { query, close } from "../db.js";
+import { output } from "../output.js";
+
+export async function findFeaturesByContentSource(name, opts) {
+  const rows = await query(`SELECT
+    pageOrTemplateId, isPageOrTemplate, uri, name,
+    featureName, featureDisplayName, contentService
+  FROM view_rendering
+  LEFT JOIN view_page_and_template
+    ON view_page_and_template.published = view_rendering.renderingVersionId
+  WHERE contentService LIKE '%' || ? || '%'
+    AND featureName != '' AND renderingVersionId IS NOT NULL
+  ORDER BY isPageOrTemplate ASC, pageOrTemplateId ASC, uri ASC, name ASC`, [name]);
+  output(rows, opts, `All features in published pages, using content source: ${name}`);
+  close();
+}

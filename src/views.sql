@@ -22,6 +22,16 @@ FROM read_json_auto(
 );
 
 -- Pages and templates combined view
+--
+-- CHANGE: Added headRendering column extracted from versions.{publishedVersionId}.head
+-- This is the actual published rendering ID. The page/template `published` field only
+-- contains the version ID, not the rendering ID.
+--
+-- Original:
+--   SELECT _id as pageOrTemplateId, 'Page' as isPageOrTemplate, uri, name,
+--     defaultOutputType, published
+--   FROM read_json_auto('pb-data/page.json', ...)
+--
 CREATE VIEW view_page_and_template AS
 SELECT
   _id as pageOrTemplateId,
@@ -29,7 +39,8 @@ SELECT
   uri,
   name,
   defaultOutputType,
-  published
+  published,
+  json_extract_string(versions, '$.' || published || '.head') as headRendering
 FROM read_json_auto(
   'pb-data/page.json',
   format = 'newline_delimited',
@@ -42,7 +53,8 @@ SELECT
   '' as uri,
   name,
   '' as defaultOutputType,
-  published
+  published,
+  json_extract_string(versions, '$.' || published || '.head') as headRendering
 FROM read_json_auto(
   'pb-data/template.json',
   format = 'newline_delimited',
@@ -51,10 +63,35 @@ FROM read_json_auto(
 
 -- Simplified and flattened rendering collection view
 CREATE VIEW view_rendering AS
-WITH PublishedVersions AS (
-  SELECT DISTINCT published as versionId
+--
+-- CHANGE: Replaced version-based filtering + creationDate guessing with direct
+-- rendering ID match using the `head` field from page/template versions.
+--
+-- Original PublishedVersions CTE:
+--   WITH PublishedVersions AS (
+--     SELECT DISTINCT published as versionId
+--     FROM view_page_and_template
+--     WHERE published IS NOT NULL
+--   ),
+--
+-- Original PublishedLayoutItems filter:
+--   WHERE _version IN (SELECT versionId FROM PublishedVersions)
+--
+-- Original LatestLayoutItems selection (guessed by creationDate):
+--   QUALIFY ROW_NUMBER() OVER (PARTITION BY renderingVersionId ORDER BY creationDate DESC) = 1
+--
+-- Problem: Multiple renderings share the same _version. The oldest is the published
+-- snapshot, newer ones are draft autosaves. Sorting by creationDate (ASC or DESC)
+-- does not reliably identify the published rendering.
+--
+-- Fix: The page/template JSON contains versions.{versionId}.head which is the
+-- definitive published rendering _id. We now filter renderings by matching _id
+-- directly against headRendering, eliminating all guesswork.
+--
+WITH PublishedRenderings AS (
+  SELECT DISTINCT headRendering as renderingId
   FROM view_page_and_template
-  WHERE published IS NOT NULL
+  WHERE headRendering IS NOT NULL
 ),
 PublishedLayoutItems AS (
   SELECT
@@ -68,20 +105,15 @@ PublishedLayoutItems AS (
     format = 'newline_delimited',
     ignore_errors=true
   )
-  WHERE _version IN (SELECT versionId FROM PublishedVersions)
+  WHERE _id IN (SELECT renderingId FROM PublishedRenderings)
 ),
-LatestLayoutItems AS (
-  SELECT
-    renderingId,
-    renderingVersionId,
-    creationDate,
-    layout,
-    layoutItems
-  FROM PublishedLayoutItems
-  -- Select the latest rendering by creation date for each page's published version
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY renderingVersionId ORDER BY creationDate DESC) = 1
-  ORDER BY renderingVersionId, creationDate DESC
-),
+-- Original LatestLayoutItems CTE (removed — no longer needed):
+--   LatestLayoutItems AS (
+--     SELECT renderingId, renderingVersionId, creationDate, layout, layoutItems
+--     FROM PublishedLayoutItems
+--     QUALIFY ROW_NUMBER() OVER (PARTITION BY renderingVersionId ORDER BY creationDate ASC) = 1
+--     ORDER BY renderingVersionId, creationDate DESC
+--   ),
 FlattenedLayoutItems AS (
   SELECT
     renderingId,
@@ -89,8 +121,7 @@ FlattenedLayoutItems AS (
     creationDate,
     layout,
     unnest(layoutItems) as layoutItem
-  FROM LatestLayoutItems
-  ORDER BY renderingVersionId, creationDate DESC
+  FROM PublishedLayoutItems
 ),
 RenderableItems AS (
   SELECT
@@ -113,7 +144,6 @@ ExpandedRenderableItems AS (
     renderableItem.customFields,
     renderableItem.features
   FROM RenderableItems
-  -- WHERE renderableItem.parent IS NULL -- Optionally exclude feature-linked children feature blocks
 ),
 FeaturesFromRenderableItems AS (
   SELECT
@@ -127,10 +157,10 @@ FeaturesFromRenderableItems AS (
     (
       SELECT string_agg(content_service, '|')
       FROM (
-        SELECT DISTINCT json_extract_string(customFields, '$.' || key.unnest || '.contentService') as content_service
-        FROM unnest(json_keys(customFields)) as key
-        WHERE json_extract_string(customFields, '$.' || key.unnest || '.contentService') IS NOT NULL
-          AND json_extract_string(customFields, '$.' || key.unnest || '.contentService') != ''
+        SELECT DISTINCT json_extract_string(customFields, '$.' || k || '.contentService') as content_service
+        FROM unnest(json_keys(customFields)) as t(k)
+        WHERE json_extract_string(customFields, '$.' || k || '.contentService') IS NOT NULL
+          AND json_extract_string(customFields, '$.' || k || '.contentService') != ''
       )
     ) as contentService
     FROM ExpandedRenderableItems
@@ -167,14 +197,13 @@ FeaturesFromChains AS (
     (
       SELECT string_agg(content_service, '|')
       FROM (
-        SELECT DISTINCT json_extract_string(feature.customFields, '$.' || key.unnest || '.contentService') as content_service
-        FROM unnest(json_keys(feature.customFields)) as key
-        WHERE json_extract_string(feature.customFields, '$.' || key.unnest || '.contentService') IS NOT NULL
-          AND json_extract_string(feature.customFields, '$.' || key.unnest || '.contentService') != ''
+        SELECT DISTINCT json_extract_string(feature.customFields, '$.' || k || '.contentService') as content_service
+        FROM unnest(json_keys(feature.customFields)) as t(k)
+        WHERE json_extract_string(feature.customFields, '$.' || k || '.contentService') IS NOT NULL
+          AND json_extract_string(feature.customFields, '$.' || k || '.contentService') != ''
       )
     ) as contentService
   FROM UnnestedFeaturesFromChains
-  -- WHERE feature.parent IS NULL -- Optionally exclude feature-linked children feature blocks
 ),
 FlattenedAllFeatures AS (
   SELECT *

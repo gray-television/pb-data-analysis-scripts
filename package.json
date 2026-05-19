@@ -1,0 +1,34 @@
+{
+  "name": "pb-data-analyzer",
+  "version": "1.0.0",
+  "description": "Analyze Arc XP PageBuilder data (pb-data) locally using Node.js and DuckDB",
+  "type": "module",
+  "bin": {
+    "pb-analyze": "./src/index.js"
+  },
+  "scripts": {
+    "setup": "node src/prepare.js",
+    "all-features": "node src/index.js all-features",
+    "all-chains": "node src/index.js all-chains",
+    "all-pages": "node src/index.js all-pages",
+    "all-content-sources": "node src/index.js all-content-sources",
+    "all-resolvers-sources": "node src/index.js all-resolvers-sources",
+    "find-feature": "node src/index.js find-feature",
+    "find-chain": "node src/index.js find-chain",
+    "find-page": "node src/index.js find-page",
+    "find-content-source": "node src/index.js find-content-source",
+    "find-resolver": "node src/index.js find-resolver",
+    "describe": "node src/index.js describe",
+    "view-pages": "node src/index.js view-pages",
+    "view-rendering": "node src/index.js view-rendering",
+    "view-resolvers": "node src/index.js view-resolvers",
+    "gui": "node src/index.js gui"
+  },
+  "dependencies": {
+    "bson": "^6.10.3",
+    "chalk": "^5.4.1",
+    "dotenv": "^17.4.2",
+    "duckdb": "^1.2.2"
+  },
+  "license": "MIT"
+}
