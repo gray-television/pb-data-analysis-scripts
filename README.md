@@ -99,6 +99,28 @@ npm run find-content-source n=content-api
 npm run find-resolver n=content-api
 ```
 
+### Custom Field Analysis
+
+| Script | Description |
+|---|---|
+| `npm run find-custom-field k=<key> v=<value>` | Features where a `customFields` key equals a value |
+| `npm run find-custom-field k=<key> 'v=!<value>'` | Features where a `customFields` key does NOT equal a value (includes null/absent) |
+
+Optionally filter to specific feature names with `f=<name1>,<name2>`:
+
+```bash
+# All features where imageLazyLoad is true
+npm run find-custom-field k=imageLazyLoad v=true
+
+# All features where imageLazyLoad is not true (null, absent, false, or other)
+npm run find-custom-field k=imageLazyLoad 'v=!true'
+
+# Same, but only for specific features
+npm run find-custom-field k=imageLazyLoad 'v=!true' 'f=global/FlexFeatureFeed,global/FlexFeature' csv
+```
+
+> **Note:** Values are always compared as strings. `v=true` matches the string `"true"`, not a boolean.
+
 ### Page / URL Analysis
 
 | Script | Description |
@@ -184,6 +206,7 @@ The `describe` command in CSV mode saves one file per section. In JSON mode it s
 | `npm run find-page` | Pages matching URI | `u=<uri> [csv] [json]` |
 | `npm run find-content-source` | Features using a content source | `n=<name> [csv] [json]` |
 | `npm run find-resolver` | Resolvers using a content source | `n=<name> [csv] [json]` |
+| `npm run find-custom-field` | Features with a specific customFields key/value | `k=<key> v=<value> [f=<name,...>] [csv] [json]` |
 | `npm run describe` | Describe a page or template | `i=<id> [csv] [json]` |
 | `npm run view-pages` | Dump view_page_and_template | `csv` `json` |
 | `npm run view-rendering` | Dump view_rendering | `csv` `json` |

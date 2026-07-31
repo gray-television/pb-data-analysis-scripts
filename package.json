@@ -18,6 +18,7 @@
     "find-page": "node src/index.js find-page",
     "find-content-source": "node src/index.js find-content-source",
     "find-resolver": "node src/index.js find-resolver",
+    "find-custom-field": "node src/index.js find-custom-field",
     "describe": "node src/index.js describe",
     "view-pages": "node src/index.js view-pages",
     "view-rendering": "node src/index.js view-rendering",

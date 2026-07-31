@@ -15,10 +15,7 @@ export function parseCliArgs(rawArgs) {
   };
   const _parseValue = (value) => {
     if (typeof value === "undefined") return true;
-    const val = (value || "").toString().trim();
-    if (val === "true") return true;
-    if (val === "false") return false;
-    return val;
+    return (value || "").toString().trim();
   };
   return args.reduce((acc, el) => {
     const [originalKey, originalValue] = el.split("=");
