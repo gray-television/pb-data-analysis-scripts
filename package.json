@@ -23,7 +23,8 @@
     "view-pages": "node src/index.js view-pages",
     "view-rendering": "node src/index.js view-rendering",
     "view-resolvers": "node src/index.js view-resolvers",
-    "gui": "node src/index.js gui"
+    "page-renditions": "node src/index.js page-renditions",
+  "gui": "node src/index.js gui"
   },
   "dependencies": {
     "bson": "^6.10.3",

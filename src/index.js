@@ -16,6 +16,7 @@ import { viewPageAndTemplate } from "./queries/view-page-and-template.js";
 import { viewRendering } from "./queries/view-rendering.js";
 import { viewResolver } from "./queries/view-resolver.js";
 import { gui } from "./queries/gui.js";
+import { pageRenditions } from "./queries/page-renditions.js";
 
 const args = parseCliArgs(process.argv);
 const command = process.argv[2];
@@ -47,6 +48,7 @@ const commands = {
   "view-pages": () => viewPageAndTemplate(opts("view-pages")),
   "view-rendering": () => viewRendering(opts("view-rendering")),
   "view-resolvers": () => viewResolver(opts("view-resolvers")),
+  "page-renditions": () => { const i = args.i || args.id; minLen(i, "Page/Template ID"); pageRenditions(i, opts("page-renditions", i)); },
   "gui": () => gui(),
 };
 

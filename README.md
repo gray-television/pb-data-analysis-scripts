@@ -133,6 +133,19 @@ npm run all-pages
 npm run find-page u=/events/
 ```
 
+### Page Renditions
+
+| Script | Description |
+|---|---|
+| `npm run page-renditions i=<id>` | List all renditions (head, stage, drafts) for a page or template |
+
+Returns every rendition ID across all versions of a page/template, with its type (`head`, `stage`, `draft`), owner (user name or `(published)`), and version ID. Useful for auditing publish history and tracking changes across drafts.
+
+```bash
+npm run page-renditions i=ppycSDRcnxNDQzfUs
+npm run page-renditions i=ppycSDRcnxNDQzfUs csv
+```
+
 ### Describe a Page or Template
 
 | Script | Description |
@@ -208,6 +221,7 @@ The `describe` command in CSV mode saves one file per section. In JSON mode it s
 | `npm run find-resolver` | Resolvers using a content source | `n=<name> [csv] [json]` |
 | `npm run find-custom-field` | Features with a specific customFields key/value | `k=<key> v=<value> [f=<name,...>] [csv] [json]` |
 | `npm run describe` | Describe a page or template | `i=<id> [csv] [json]` |
+| `npm run page-renditions` | List all renditions for a page or template | `i=<id> [csv] [json]` |
 | `npm run view-pages` | Dump view_page_and_template | `csv` `json` |
 | `npm run view-rendering` | Dump view_rendering | `csv` `json` |
 | `npm run view-resolvers` | Dump view_resolver | `csv` `json` |
