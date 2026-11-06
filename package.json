@@ -24,6 +24,7 @@
     "view-rendering": "node src/index.js view-rendering",
     "view-resolvers": "node src/index.js view-resolvers",
     "page-renditions": "node src/index.js page-renditions",
+    "pages-by-month": "node src/index.js pages-by-month",
   "gui": "node src/index.js gui"
   },
   "dependencies": {
